@@ -8,7 +8,7 @@ This guide assumes you started the Web UI through the [root README](../../../REA
 
 Open **Settings → Models**. The DeepSeek card exposes one API-key field; enter the key and save it.
 
-![The Models page: the DeepSeek card, with Add provider and Add a custom provider below it](providers-models-page.png)
+![Kalix Code mascot](providers-models-page.png)
 
 Keys are write-only. The page receives a redacted descriptor after saving, never the literal secret. The key is stored in `$DSH_HOME/.credentials.yaml`, while settings retain only its credential reference.
 
@@ -22,7 +22,7 @@ Providers with native authentication need their native credentials instead. Bedr
 
 Choose **Add a custom provider** for a company gateway, self-hosted server, or provider absent from the installed catalog. Supply a lowercase Provider ID, base URL, API protocol, credential, and at least one model.
 
-![The custom provider form: Provider ID, display name, base URL, API protocol, and API key](providers-custom-form.png)
+![Kalix Code wordmark](providers-custom-form.png)
 
 The Provider ID is permanent because requests, saved sessions, model defaults, and credential references use it. To rename a provider, add a new provider and delete the old one. The display name, base URL, protocol, credential, and models remain editable.
 

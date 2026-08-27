@@ -42,6 +42,23 @@ pnpm dsh web
 - Add the [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic to your plugin repository for discoverability.
 - Join <a href="https://discord.gg/Ycq5dCaS4">DeepSeek Harness Discord community</a>.
 
+<table>
+  <thead>
+    <tr>
+      <th align="center">Kalix Code logo</th>
+      <th align="center">Kalix Code mascot</th>
+      <th align="center">Kalix Code logo</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center"><img src="website/public/kalix-code-wordmark.png" alt="Kalix Code logo" width="360" height="95"></td>
+      <td align="center"><img src="website/public/kalix-code-mascot.png" alt="Kalix Code mascot" width="180" height="180"></td>
+      <td align="center"><img src="website/public/kalix-code-wordmark.png" alt="Kalix Code logo" width="360" height="95"></td>
+    </tr>
+  </tbody>
+</table>
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
