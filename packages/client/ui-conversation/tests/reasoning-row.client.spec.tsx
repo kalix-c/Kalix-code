@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render } from '@testing-library/react'
+import { cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import { makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
 import { zh as commonZh } from '@deepseek-ai/dsh-client-locale/src/locales/zh.ts'
 import { AssistantMarkdown, type AssistantMarkdownProps } from '../src/client/chat/AssistantMarkdown.tsx'
@@ -119,5 +119,42 @@ describe('ReasoningRow', () => {
     expect(view.queryByText('IN')).toBeNull()
     expect(view.container.querySelector('[class*="ioCard"]')).toBeNull()
     expect(view.container.querySelector('[class*="thinkBody"]')).not.toBeNull()
+  })
+
+  it('copies the expanded reasoning text to the device clipboard', async () => {
+    const writeText = vi.fn(() => Promise.resolve())
+    vi.stubGlobal('navigator', { clipboard: { writeText } })
+    const view = render(
+      <AssistantMarkdown
+        t={t}
+        blocks={[{ kind: 'reasoning', text: 'Inspect the session\nCheck persistence' }]}
+        streaming={false}
+        renderMessageImages={renderMessageImages}
+      />,
+    )
+
+    fireEvent.click(view.getByText('Think'))
+    fireEvent.click(view.getByRole('button', { name: zh['reasoning.copy'] }))
+
+    await waitFor(() => { expect(writeText).toHaveBeenCalledWith('Inspect the session\nCheck persistence') })
+    expect(view.getByText(zh['reasoning.copied'])).toBeTruthy()
+  })
+
+  it('reports a clipboard refusal without losing the reasoning text', async () => {
+    vi.stubGlobal('navigator', { clipboard: { writeText: vi.fn(() => Promise.reject(new Error('denied'))) } })
+    const view = render(
+      <AssistantMarkdown
+        t={t}
+        blocks={[{ kind: 'reasoning', text: 'Inspect the session\nCheck persistence' }]}
+        streaming={false}
+        renderMessageImages={renderMessageImages}
+      />,
+    )
+
+    fireEvent.click(view.getByText('Think'))
+    fireEvent.click(view.getByRole('button', { name: zh['reasoning.copy'] }))
+
+    await waitFor(() => { expect(view.getByText(zh['reasoning.copyFailed'])).toBeTruthy() })
+    expect(view.getByText(/Check persistence/)).toBeTruthy()
   })
 })

@@ -10,9 +10,11 @@
  * through `credentials.set` under the reference the profile records, exactly as
  * an existing provider's key does.
  *
- * The three fields a hand-declared route cannot default — endpoint, protocol,
- * and at least one model — are required here rather than at load, so the
- * failure names the field while the user is still looking at it.
+ * The only setup facts a person needs to declare are a display name, endpoint,
+ * and protocol. This card derives the opaque route id from the name and then
+ * asks the live endpoint for its models after the form settles. A failed probe
+ * leaves the model editor available, so a gateway without a readable catalog
+ * remains usable.
  *
  * There is deliberately no reasoning-effort control, here or on the editor
  * card: effort is a per-MODEL capability, and the models under one provider
@@ -21,9 +23,9 @@
  * levels instead.
  */
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import type { IApiClient } from '@deepseek-ai/dsh-api-remotes/client'
+import type { DiscoveredModelView, IApiClient } from '@deepseek-ai/dsh-api-remotes/client'
 import { apiKeyFailure } from './apiKey.ts'
 import { EditorFooter } from './EditorFooter.tsx'
 import { validateDeepSeekModels } from './DeepSeekModelsEditor.tsx'
@@ -35,16 +37,48 @@ import styles from './ModelsSection.module.css'
 
 /** The settings namespace a hand-declared provider is written into. */
 const NS = 'llm-pi-ai'
+/** Wait for a pasted endpoint/key to settle before interrogating it once. */
+const AUTO_DISCOVERY_DELAY_MS = 450
 
 /**
- * A route id usable as a settings key AND as the stem of a credential name.
- * The leading letter is the second half of that: `deriveKeyRef` uppercases the
- * id and replaces every non-alphanumeric run with `_`, and a credential
- * reference is a POSIX shell identifier, which cannot start with a digit. A
- * digit-leading id passes every check this card makes and then fails at the
- * credential seam with a raw regular expression the user cannot act on.
+ * Derive an internal provider id from a display name, making a collision
+ * deterministic without requiring people to learn the configuration syntax.
  */
-const ROUTE_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
+function routeFromDisplayName(displayName: string, taken: readonly string[]): string {
+  const words = displayName.normalize('NFKD')
+    .replace(/[\u0300-\u036f]/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, '-')
+    .replace(/^-+|-+$/gu, '')
+  const stem = words === '' ? 'custom-provider' : /^[a-z]/u.test(words) ? words : `provider-${words}`
+  let candidate = stem
+  let ordinal = 2
+  while (taken.includes(candidate)) {
+    candidate = `${stem}-${String(ordinal)}`
+    ordinal += 1
+  }
+  return candidate
+}
+
+/** Whether the typed endpoint is a safe HTTP target to interrogate. */
+function isProbeableUrl(value: string): boolean {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' || url.protocol === 'http:'
+  } catch {
+    return false
+  }
+}
+
+/** Adopt provider-disclosed metadata without manufacturing unsupported facts. */
+function draftFromDiscovered(model: DiscoveredModelView): ModelDraft {
+  return {
+    id: model.id,
+    ...model.name === undefined ? {} : { name: model.name },
+    ...model.contextWindow === undefined ? {} : { contextWindow: model.contextWindow },
+    ...model.maxTokens === undefined ? {} : { maxTokens: model.maxTokens },
+  }
+}
 
 /** Props of {@link CustomProviderCard}. */
 export interface CustomProviderCardProps {
@@ -78,12 +112,14 @@ export function CustomProviderCard(props: CustomProviderCardProps): ReactNode {
   // Captured at mount, like the editor's: the write must be judged against the
   // section this card was drafted over, not whatever it grew into meanwhile.
   const [openedAt] = useState(() => props.revision)
-  const [route, setRoute] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [baseURL, setBaseURL] = useState('')
   const [protocol, setProtocol] = useState(protocols[0] ?? '')
   const [keyDraft, setKeyDraft] = useState('')
   const [models, setModels] = useState<readonly ModelDraft[]>([])
+  const [autoDiscovering, setAutoDiscovering] = useState(false)
+  const [autoDiscoveryFailure, setAutoDiscoveryFailure] = useState<string | undefined>(undefined)
+  const lastAutomaticProbe = useRef<string | undefined>(undefined)
   const [busy, setBusy] = useState(false)
   const [failure, setFailure] = useState<string | undefined>(undefined)
   /**
@@ -96,8 +132,9 @@ export function CustomProviderCard(props: CustomProviderCardProps): ReactNode {
   /** Everything but the key stops being editable once the provider exists. */
   const profileDisabled = disabled || committed
 
-  const routeInvalid = route.length > 0 && !ROUTE_PATTERN.test(route)
-  const routeTaken = taken.includes(route)
+  const displayValue = displayName.trim()
+  const baseURLValue = baseURL.trim()
+  const route = routeFromDisplayName(displayValue, taken)
   // Rows are checked by the same per-row validator the editor cards use, so a
   // bad row is named by its position here too. Capacities have route-level
   // fallbacks; what a route cannot default is at least one model.
@@ -107,26 +144,22 @@ export function CustomProviderCard(props: CustomProviderCardProps): ReactNode {
   // string, which the create path reads as "no key supplied" — a route may
   // legitimately authenticate through the provider's own ambient discovery.
   const keyValue = keyDraft.trim()
-  const ready = route.length > 0 && !routeInvalid && !routeTaken
-    && baseURL.length > 0 && models.length > 0 && modelFailure === undefined
-    && keyFailure === undefined
+  const baseURLInvalid = baseURLValue.length > 0 && !isProbeableUrl(baseURLValue)
+  const ready = displayValue.length > 0 && baseURLValue.length > 0 && !baseURLInvalid && models.length > 0
+    && modelFailure === undefined && keyFailure === undefined
   // The one blocked gate worth a line under the form. A satisfied card says
   // nothing at all rather than printing an empty paragraph.
-  const hint = failure !== undefined || ready
-    // The key field prints its own failure directly beneath itself, so a card
-    // blocked only by the key stays silent here rather than answering with the
-    // next unmet gate — which is satisfied, and reads as a second, false fault.
-    || keyFailure !== undefined
-    // Same for the route id, and it must be tested rather than assumed: the
-    // fallback arm below reads "no models yet", so an unmet route gate would
-    // fall through to it and contradict the filled-in list right above.
-    || route.length === 0 || routeInvalid || routeTaken
+  const hint = failure !== undefined || autoDiscoveryFailure !== undefined || ready || keyFailure !== undefined
     ? undefined
-    : baseURL.length === 0
-      ? t('customNeedsBaseUrl')
-      : modelFailure !== undefined
-        ? `${t('model')} ${String(modelFailure.index + 1)}: ${t(modelFailure.key)}`
-        : t('customNeedsModels')
+    : displayValue.length === 0
+      ? t('customNeedsDisplayName')
+      : baseURLValue.length === 0
+        ? t('customNeedsBaseUrl')
+        : baseURLInvalid
+          ? t('customInvalidBaseUrl')
+          : modelFailure !== undefined
+          ? `${t('model')} ${String(modelFailure.index + 1)}: ${t(modelFailure.key)}`
+          : t('customNeedsModels')
 
   /** Perform the create, returning a failure message or undefined. */
   const createOnce = async (): Promise<string | undefined> => {
@@ -134,14 +167,14 @@ export function CustomProviderCard(props: CustomProviderCardProps): ReactNode {
     const storesKey = keyValue.length > 0
     if (!committed) {
       const profile = {
-        ...displayName.length === 0 ? {} : { displayName },
+        displayName: displayValue,
         // The profile names the conventional reference only when this card is
         // about to store a key, matching the editor: a route declared with the
         // key left blank keeps its provider-native auth path (a credential
         // chain, ADC) instead of resolving a reference nothing ever sets.
         ...storesKey ? { apiKeyEnv: keyRef } : {},
         api: protocol,
-        baseURL,
+        baseURL: baseURLValue,
         models: models.map(model => ({ ...model })),
       }
       const response = await api.settings.mutate({
@@ -187,35 +220,56 @@ export function CustomProviderCard(props: CustomProviderCardProps): ReactNode {
     }
   }
 
+  useEffect(() => {
+    if (committed || props.readOnly || displayValue.length === 0 || models.length > 0
+      || keyFailure !== undefined || protocol === '' || !isProbeableUrl(baseURLValue)) return
+    const signature = JSON.stringify([baseURLValue, protocol, keyValue])
+    if (lastAutomaticProbe.current === signature) return
+    lastAutomaticProbe.current = signature
+    let active = true
+    const timer = globalThis.setTimeout(() => {
+      setAutoDiscovering(true)
+      setAutoDiscoveryFailure(undefined)
+      void api.llm.discoverModels({
+        settingsNs: NS,
+        baseURL: baseURLValue,
+        api: protocol,
+        ...keyValue.length === 0 ? {} : { apiKey: keyValue },
+      }).then((response) => {
+        if (!active) return
+        if (!response.result.ok) {
+          setAutoDiscoveryFailure(response.result.error.message)
+          return
+        }
+        if (response.result.value.models.length === 0) {
+          setAutoDiscoveryFailure(t('fetchEmpty'))
+          return
+        }
+        setModels(response.result.value.models.map(draftFromDiscovered))
+      }, (error: unknown) => {
+        if (active) setAutoDiscoveryFailure(messageOf(error))
+      }).finally(() => {
+        if (active) setAutoDiscovering(false)
+      })
+    }, AUTO_DISCOVERY_DELAY_MS)
+    return () => {
+      active = false
+      globalThis.clearTimeout(timer)
+    }
+  }, [api.llm, baseURLValue, committed, displayValue, keyFailure, keyValue, models.length, props.readOnly, protocol, t])
+
   return (
     <div className={styles['editor']}>
       <div className={styles['editorHeader']}>
         <span className={styles['editorTitle']}>{t('customTitle')}</span>
       </div>
       <div className={styles['field']}>
-        <span className={styles['fieldLabel']}>{t('customRoute')}</span>
-        <input
-          className={styles['input']}
-          type="text"
-          value={route}
-          placeholder="acme-gateway"
-          aria-label={t('customRoute')}
-          disabled={profileDisabled}
-          onChange={(event) => { setRoute(event.target.value) }}
-        />
-      </div>
-      {/* A rejected id reads as a fault, not as guidance — the same split the
-          key field below already makes between its failure and its hint. */}
-      {routeInvalid || routeTaken
-        ? <p className={styles['error']}>{t(routeInvalid ? 'customRouteInvalid' : 'customRouteTaken')}</p>
-        : <p className={styles['advancedHint']}>{t('customRouteHint')}</p>}
-      <div className={styles['field']}>
         <span className={styles['fieldLabel']}>{t('customDisplayName')}</span>
         <input
           className={styles['input']}
           type="text"
           value={displayName}
-          placeholder={route.length === 0 ? t('customDisplayName') : route}
+          placeholder="Acme Gateway"
           aria-label={t('customDisplayName')}
           disabled={profileDisabled}
           onChange={(event) => { setDisplayName(event.target.value) }}
@@ -269,18 +323,19 @@ export function CustomProviderCard(props: CustomProviderCardProps): ReactNode {
         onChange={setModels}
         probe={{
           settingsNs: NS,
-          baseURL,
+          baseURL: baseURLValue,
           api: protocol,
           ...keyValue.length === 0 ? {} : { apiKey: keyValue },
         }}
         probeBlocked={keyFailure === 'keyBlank' ? 'keyBlankNew' : keyFailure}
         api={api}
         t={t}
-        disabled={profileDisabled}
+        disabled={profileDisabled || autoDiscovering}
       />
+      {autoDiscovering ? <p className={styles['advancedHint']}>{t('customDiscoveringModels')}</p> : null}
+      {autoDiscoveryFailure !== undefined ? <p className={styles['error']}>{autoDiscoveryFailure}</p> : null}
       {failure !== undefined ? <p className={styles['error']}>{failure}</p> : null}
-      {/* Only the gates with something to say render; the route-id gate has its
-          own field-level hint, so its blocked state would print an empty line. */}
+      {/* Only the gates with something to say render; a complete card stays visually quiet. */}
       {hint === undefined ? null : <p className={styles['advancedHint']}>{hint}</p>}
       <EditorFooter
         t={t}

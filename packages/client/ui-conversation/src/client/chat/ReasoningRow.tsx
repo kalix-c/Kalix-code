@@ -26,6 +26,7 @@ function latestLine(text: string): string {
  */
 export function ReasoningRow({ text, running, t }: { text: string; running: boolean; t: ChatViewSlotProps['t'] }) {
   const [expanded, setExpanded] = useState(false)
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
   const summaryRef = useRef<HTMLSpanElement>(null)
   const summary = running ? latestLine(text) : firstLine(text)
   const scheduleSummaryScroll = useThrottledVisualUpdate(() => {
@@ -36,6 +37,19 @@ export function ReasoningRow({ text, running, t }: { text: string; running: bool
   useEffect(() => {
     scheduleSummaryScroll()
   }, [running, scheduleSummaryScroll, summary])
+
+  const copyReasoning = async (): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopyState('copied')
+    } catch {
+      setCopyState('failed')
+    }
+  }
+
+  const copyLabel = copyState === 'copied'
+    ? t('reasoning.copied')
+    : copyState === 'failed' ? t('reasoning.copyFailed') : t('reasoning.copy')
 
   return (
     <div className={css.root} data-variant="think" data-state={running ? 'running' : 'ok'}>
@@ -58,7 +72,16 @@ export function ReasoningRow({ text, running, t }: { text: string; running: bool
           </>
         )}
       >
-        <div className={css.thinkBody}>{text}</div>
+        <div className={css.thinkBody}>
+          <button
+            className={css.copyButton}
+            type="button"
+            onClick={() => { void copyReasoning() }}
+          >
+            {copyLabel}
+          </button>
+          <div>{text}</div>
+        </div>
       </DisclosureRow>
     </div>
   )

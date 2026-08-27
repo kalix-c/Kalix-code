@@ -17,43 +17,43 @@ afterEach(() => {
   vi.unstubAllEnvs()
 })
 
-describe('dsh path helpers', () => {
-  it('owns the shared default DSH home directory name', () => {
-    expect(DSH_HOME_DIR_NAME).toBe('.dsh')
-    expect(DEFAULT_DSH_HOME_DISPLAY).toBe('~/.dsh')
-    expect(defaultDshHome()).toBe(join(homedir(), '.dsh'))
+describe('Kalix path helpers', () => {
+  it('owns the shared default Kalix home directory name', () => {
+    expect(DSH_HOME_DIR_NAME).toBe('.kalix')
+    expect(DEFAULT_DSH_HOME_DISPLAY).toBe('~/.kalix')
+    expect(defaultDshHome()).toBe(join(homedir(), '.kalix'))
   })
 
   it('expands tilde paths without changing non-tilde paths', () => {
     expect(expandHomePath('~')).toBe(homedir())
-    expect(expandHomePath('~/.dsh')).toBe(join(homedir(), '.dsh'))
-    expect(expandHomePath('~\\.dsh')).toBe(join(homedir(), '.dsh'))
-    expect(expandHomePath('/tmp/.dsh')).toBe('/tmp/.dsh')
-    expect(expandHomePath('~other/.dsh')).toBe('~other/.dsh')
+    expect(expandHomePath('~/.kalix')).toBe(join(homedir(), '.kalix'))
+    expect(expandHomePath('~\\.kalix')).toBe(join(homedir(), '.kalix'))
+    expect(expandHomePath('/tmp/.kalix')).toBe('/tmp/.kalix')
+    expect(expandHomePath('~other/.kalix')).toBe('~other/.kalix')
   })
 
-  it('resolves explicit path before DSH_HOME and the default', () => {
-    const envHome = join(homedir(), 'env-dsh')
+  it('resolves explicit path before KALIX_HOME and the default', () => {
+    const envHome = join(homedir(), 'env-kalix')
 
-    expect(resolveDshHome('/tmp/explicit-dsh', { DSH_HOME: '~/env-dsh' })).toBe(resolve('/tmp/explicit-dsh'))
-    expect(resolveDshHome(undefined, { DSH_HOME: '~/env-dsh' })).toBe(envHome)
+    expect(resolveDshHome('/tmp/explicit-kalix', { KALIX_HOME: '~/env-kalix' })).toBe(resolve('/tmp/explicit-kalix'))
+    expect(resolveDshHome(undefined, { KALIX_HOME: '~/env-kalix' })).toBe(envHome)
     expect(resolveDshHome(undefined, {})).toBe(defaultDshHome())
   })
 
-  it('treats an empty or whitespace-only DSH_HOME as unset', () => {
-    expect(resolveDshHome(undefined, { DSH_HOME: '' })).toBe(defaultDshHome())
-    expect(resolveDshHome(undefined, { DSH_HOME: '   ' })).toBe(defaultDshHome())
+  it('treats an empty or whitespace-only KALIX_HOME as unset', () => {
+    expect(resolveDshHome(undefined, { KALIX_HOME: '' })).toBe(defaultDshHome())
+    expect(resolveDshHome(undefined, { KALIX_HOME: '   ' })).toBe(defaultDshHome())
   })
 
-  it('joins child segments onto the resolved DSH_HOME', () => {
-    vi.stubEnv('DSH_HOME', '~/env-dsh')
-    expect(dshHomePath()).toBe(join(homedir(), 'env-dsh'))
-    expect(dshHomePath('storages', 'cache')).toBe(join(homedir(), 'env-dsh', 'storages', 'cache'))
+  it('joins child segments onto the resolved KALIX_HOME', () => {
+    vi.stubEnv('KALIX_HOME', '~/env-kalix')
+    expect(dshHomePath()).toBe(join(homedir(), 'env-kalix'))
+    expect(dshHomePath('storages', 'cache')).toBe(join(homedir(), 'env-kalix', 'storages', 'cache'))
   })
 
   it('labels a resolved home by whether it is the default root', () => {
-    expect(dshHomeDisplay(resolve(defaultDshHome()))).toBe('~/.dsh')
-    expect(dshHomeDisplay('/some/other/root')).toBe('$DSH_HOME')
+    expect(dshHomeDisplay(resolve(defaultDshHome()))).toBe('~/.kalix')
+    expect(dshHomeDisplay('/some/other/root')).toBe('$KALIX_HOME')
   })
 
   it('canonicalizes a watcher ancestor while preserving a missing suffix', async () => {

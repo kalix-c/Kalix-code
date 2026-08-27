@@ -1,49 +1,49 @@
-# `@deepseek-ai/dsh`
+# Kalix CLI
 
 [English](README.md) | 中文
 
-`dsh` 是 DeepSeek Harness 中用于启动 profile 的命令；profile 由多个插件组合包 patch 层按顺序叠加而成，其上再应用用户自己的覆盖配置。[`src/args.ts`](src/args.ts) 负责命令语法，[`src/bin.ts`](src/bin.ts) 只加载选中的运行器。无效命令、来自其他模式的选项、配置错误和启动失败都会以非零状态退出。
+`kalix` 是 Kalix Code 的 profile 启动器。它只启动所选 profile，将无效命令和配置错误以非零退出码报告，并将本地用户数据保存在 `$KALIX_HOME` 或 `~/.kalix`。
 
 ## 入口模式
 
 | 命令 | 用途 |
 |---|---|
-| `dsh --profile <name>` | 启动位于 `$DSH_HOME/profiles/<name>` 的指定 profile。 |
-| `dsh --profile headless "job"` | 运行一个全新的持久化会话，打印最终答案并退出。 |
-| `dsh web` | `--profile web` 的别名。 |
-| `dsh plugin --profile <name> <pnpm args>` | 通过在 profile 目录中转发给 pnpm 来管理该 profile 的插件。 |
+| `kalix --profile <name>` | 启动 `$KALIX_HOME/profiles/<name>` 下的指定 profile。 |
+| `kalix --profile headless "job"` | 运行一个新的持久会话，输出最终回答后退出。 |
+| `kalix web` | 启动本地 Web UI；这是 `kalix --profile web` 的别名。 |
+| `kalix web --background` | 不打开浏览器，以分离的本地服务形式启动 Web UI。 |
+| `kalix plugin --profile <name> <pnpm args>` | 在 profile 目录中将其余参数转发给 pnpm，以管理 profile 插件。 |
 
-运行命令时所在的目录将作为默认 workspace 根目录。`web` 和 `headless` profile 在首次使用时会从随附模板自动初始化；其他任何 profile 都必须通过 `dsh plugin` 创建。
+`web` 和 `headless` profile 会在首次使用时从内置模板初始化。其他 profile 可通过 `kalix plugin` 创建和扩展。
 
-## 应用参数
+## Web UI 与后台模式
 
-启动器只解析自身的 flag，并将其后的所有内容交给已启动的 profile；注入该 profile 的任意应用插件都可以解析这份共享的不可变快照（[`dsh-cmdline`](../../packages/boot/cmdline/README.zh.md)）。因此，启动器的 flag 必须写在最前面；启动器无法识别的第一个 token 标志着应用参数的开始：
-
-```sh
-dsh --profile web --port 8080       # --port belongs to the web app
-dsh --profile tui --resume <id>     # example, assuming the tui profile is installed; --resume belongs to the terminal app
-dsh --profile headless "run the tests"
-dsh --profile web --help            # the web app's flags, not the launcher's
-dsh --help                          # the launcher's own help
-```
+除非指定其他端口，`kalix web` 会在 `http://127.0.0.1:3080` 提供本地界面。使用 `kalix web --no-open` 可禁止打开默认浏览器。对于 Termux、桌面终端和持续运行的本地会话，请使用 `kalix web --background`；它会与调用终端分离，并将输出记录到 `$KALIX_HOME/logs/web.log`。关闭浏览器标签页不会停止该本地服务。
 
 <a id="profiles"></a>
 
-## Profile
+## 参数与 profile
 
-profile 目录包含一个 `package.json`，其中记录树外插件依赖，以及 profile manifest（元数据清单）`dsh.profile` 和其中按顺序排列的 `bundles` 列表；还包含一个 `cordis.patch.yml`，其中保存用户自己的 patch 层。
+启动器只解析自己的参数，然后将剩余参数转发给所选 profile。请将启动器参数放在前面：
 
-配置树以空根为起点，依次叠加以下配置层：
-- `dsh.profile.bundles` 中各组合包的 patch
-- profile 自身的 `cordis.patch.yml`，然后是 home 级的 `$DSH_HOME/cordis.patch.yml`
-- `--patch` 指定的覆盖层
+```sh
+kalix web --port 8080
+kalix --profile tui --resume <id>
+kalix --profile headless "run the tests"
+kalix web --help
+kalix --help
+```
 
-`dsh.profile.bundles` 中列出的组合包先从 dsh 安装目录解析（`@deepseek-ai/dsh-base`、`@deepseek-ai/dsh-web-app`、`@deepseek-ai/dsh-headless`），再从 profile 自身的 `node_modules` 解析；pnpm 会将树外插件安装到该目录。
-
-使用 `--dump-default-config` 和 `--dump-config` 可在不启动的情况下检查组合后的配置树。
-
-层的确切优先级、flag、关闭行为、部署默认值和源码执行方式，以 [CLI（命令行界面）行为参考](reference/README.zh.md)为准。
+每个 profile 都包含一个 `package.json`、profile manifest 和由用户管理的 `cordis.patch.yml`。使用 `kalix --profile <name> --dump-default-config` 或 `--dump-config` 可在不启动 profile 的情况下检查组合后的配置。
 
 ## 开发
 
-生产运行需要已构建的包与前端产物。请在仓库根目录单独运行 `pnpm run build`，然后使用 `pnpm dsh <args...>` 运行 TypeScript 入口并转发所有参数；模块解析约定以[源码执行参考](reference/README.zh.md#source-execution)为准。
+在仓库检出目录中，先安装依赖并构建，然后启动源码版本：
+
+```sh
+pnpm install
+pnpm run build
+pnpm kalix web
+```
+
+构建后的软件包将 `kalix` 二进制发布为 `@kalix-code/kalix`。

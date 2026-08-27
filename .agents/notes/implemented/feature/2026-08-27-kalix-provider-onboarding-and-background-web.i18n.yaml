@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-27-kalix-provider-onboarding-and-background-web.md
+2026-08-27-kalix-provider-onboarding-and-background-web.md: 59619246a61f7779371ec894c7e1153544db2ddc
+2026-08-27-kalix-provider-onboarding-and-background-web.zh.md: 153b016a3a151217e253ebb669f36320ba795143

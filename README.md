@@ -1,46 +1,55 @@
-# DeepSeek Harness
+# Kalix Code
 
 English | [中文](README.zh.md)
 
-DeepSeek Harness (`dsh`) is an open-source agent harness developed by [DeepSeek AI](https://deepseek.com).
-
-It uses an architecture where **everything is a plugin**, and is powered by [Cordis](https://github.com/cordiverse/cordis), whose design is described in [_A Programming Paradigm for Spatiotemporal Composability_](https://github.com/cordiverse/paper).
+Kalix Code (`kalix`) is an open-source, plugin-first agent environment. It uses [Cordis](https://github.com/cordiverse/cordis) for modular composition and stores its local configuration under `~/.kalix` by default.
 
 ## Developer preview
 
-DeepSeek Harness is currently in _developer preview_ and is iterating rapidly. **THERE WILL BE COMPATIBILITY-BREAKING CHANGES.**
+Kalix Code is in active developer preview. Interfaces and configuration may evolve between releases.
 
-## Run
+<a id="run"></a>
 
-### Run from `npm`
+## Install and run
 
-Install `Node.js`, then run:
+<a id="run-from-source"></a>
 
-```sh
-npx @deepseek-ai/dsh web
-```
+### Computer: macOS, Linux, or Windows
 
-The command starts the Web UI at `http://127.0.0.1:3080` by default and opens it in the default browser for a local launch. An SSH launch only prints the host URL because the SSH client or editor owns the local forwarded address. Pass `--no-open` to run the server without opening a browser. See [Web UI guide](docs/user/guide/index.md).
-
-### Run from source
-
-To run from a repository checkout:
+Install Node.js 22.19 or newer, Git, and pnpm. From PowerShell, Terminal, or a Linux shell, clone and build the repository:
 
 ```sh
-git clone https://github.com/deepseek-ai/deepseek-harness.git
-cd deepseek-harness
+git clone https://github.com/kalix-c/Kalix-code.git
+cd Kalix-code
+corepack enable
 pnpm install
 pnpm run build
-pnpm dsh web
+pnpm kalix web
 ```
 
-`pnpm run build` prepares the repository artifacts. `pnpm dsh web` uses those built artifacts without rebuilding.
+The command serves the local UI at `http://127.0.0.1:3080`. Add `--no-open` when a browser must not open automatically.
+
+### Android: Termux
+
+Install Termux from a current trusted source, then run the same local service from its terminal:
+
+```sh
+pkg update && pkg upgrade
+pkg install git nodejs-lts
+corepack enable
+git clone https://github.com/kalix-c/Kalix-code.git
+cd Kalix-code
+pnpm install
+pnpm run build
+pnpm kalix web --background
+```
+
+`kalix web --background` starts the UI without opening a browser, writes logs to `$KALIX_HOME/logs/web.log`, and detaches the service from the terminal. Open `http://127.0.0.1:3080` in the device browser whenever needed; closing the tab does not stop the service. See the [Web UI guide](docs/user/guide/index.md).
 
 ## Community and support
 
-- Feel free to submit feedback or bug reports through [GitHub Discussions](https://github.com/deepseek-ai/deepseek-harness/discussions).
-- Add the [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic to your plugin repository for discoverability.
-- Join <a href="https://discord.gg/Ycq5dCaS4">DeepSeek Harness Discord community</a>.
+- Submit feedback or bug reports through [Kalix Code Issues](https://github.com/kalix-c/Kalix-code/issues).
+- Add the [`kalix-code`](https://github.com/topics/kalix-code) topic to related plugin repositories for discoverability.
 
 <table>
   <thead>

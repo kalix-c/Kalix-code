@@ -9,13 +9,15 @@
 
 import type { Readable, Writable } from 'node:stream'
 
-/** Namespace prefix reserved for DeepSeek Harness-managed child environment facts. */
+/** Legacy namespace prefix kept for compatibility with existing plugin contracts. */
 export const DSH_ENV_PREFIX = 'DSH_' as const
+/** Namespace prefix reserved for Kalix-managed child environment facts. */
+export const KALIX_ENV_PREFIX = 'KALIX_' as const
 
-/** One environment key inside the managed {@link DSH_ENV_PREFIX} namespace. */
-export type DshEnvironmentKey = `${typeof DSH_ENV_PREFIX}${string}`
+/** One environment key inside either managed compatibility namespace. */
+export type DshEnvironmentKey = `${typeof DSH_ENV_PREFIX}${string}` | `${typeof KALIX_ENV_PREFIX}${string}`
 
-/** Trusted DeepSeek Harness variables for one child-process execution. */
+/** Trusted Kalix and legacy-compatibility variables for one child-process execution. */
 export type DshEnvironment = Readonly<Record<DshEnvironmentKey, string>>
 
 /** One captured stream: the (possibly truncated) text plus recovery info. */
