@@ -6,9 +6,9 @@ import { clientBuildEnvironmentDefines } from '../../scripts/client-build-enviro
 
 const src = (rel: string): string => fileURLToPath(new URL(rel, import.meta.url))
 const STANDALONE_ERROR = 'apps/web is not a standalone application: bare Vite cannot inject window.__DSH_BOOT__. '
-  + 'From a repository checkout, run `pnpm dsh web`; an installed package uses `dsh web`. '
-  + 'For client-plugin HMR, run `pnpm dsh web` together with `pnpm run dev:web`.'
-const DEFAULT_CLIENT_TITLE = 'DSH Local Build'
+  + 'From a repository checkout, run `pnpm kalix web`; an installed package uses `kalix web`. '
+  + 'For client-plugin HMR, run `pnpm kalix web` together with `pnpm run dev:web`.'
+const DEFAULT_CLIENT_TITLE = 'Kalix Code'
 
 /** Escape build-time text before placing it in the HTML title element. */
 function escapeHtmlText(value: string): string {
@@ -17,11 +17,11 @@ function escapeHtmlText(value: string): string {
 
 /** Project the public build title into the initial HTML document. */
 function clientDocumentTitle(): Plugin {
-  const title = escapeHtmlText(process.env.DSH_CLIENT_TITLE ?? DEFAULT_CLIENT_TITLE)
+  const title = escapeHtmlText(process.env.KALIX_CLIENT_TITLE ?? process.env.DSH_CLIENT_TITLE ?? DEFAULT_CLIENT_TITLE)
   return {
-    name: 'dsh-client-document-title',
+    name: 'kalix-client-document-title',
     transformIndexHtml(html) {
-      return html.replace('<title>DSH Local Build</title>', `<title>${title}</title>`)
+      return html.replace('<title>Kalix Code</title>', `<title>${title}</title>`)
     },
   }
 }

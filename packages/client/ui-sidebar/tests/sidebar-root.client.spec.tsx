@@ -103,9 +103,9 @@ describe('SidebarRoot shell', () => {
         options?.fallback ?? null) as SidebarRootComponentProps['renderSlot']}
     />)
 
-    expect(screen.getByText('DSH Local Build')).toBeTruthy()
+    expect(screen.getByText('Kalix Code')).toBeTruthy()
     expect(screen.getByText('0123456')).toBeTruthy()
-    expect(container.querySelector('svg')).not.toBeNull()
+    expect(container.querySelector('img[src="/kalix-code-mascot.png"]')).not.toBeNull()
   })
 
   it('hands the region its wide flag and clamps expandSidebar to the collapsed state', () => {

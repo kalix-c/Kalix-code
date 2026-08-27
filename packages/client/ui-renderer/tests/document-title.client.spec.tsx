@@ -25,12 +25,12 @@ describe('DocumentTitle', () => {
     expect(document.title).toBe('DeepSeek Harness')
   })
 
-  it('uses the generic title when the build provides no title', () => {
-    vi.stubEnv('DSH_CLIENT_TITLE', '')
-    delete process.env.DSH_CLIENT_TITLE
+  it('uses the Kalix title when the build provides no title', () => {
+    vi.stubEnv('KALIX_CLIENT_TITLE', '')
+    delete process.env.KALIX_CLIENT_TITLE
     const mounted = render(<DocumentTitle title="First title" />)
-    expect(document.title).toBe('First title — DSH Local Build')
+    expect(document.title).toBe('First title — Kalix Code')
     mounted.unmount()
-    expect(document.title).toBe('DSH Local Build')
+    expect(document.title).toBe('Kalix Code')
   })
 })
