@@ -1,78 +1,37 @@
 # Kalix Code على Termux
 
-## ما الذي يعمل محليًا؟
+## المسار الموصى به للهاتف
 
-يوفر هذا الدليل طريقة تشغيل **Kalix Code CLI** وواجهة الويب المحلية من جهاز Android عبر Termux. الواجهة السحابية المنشورة مستقلة عن هذه الخدمة المحلية ومتاحة عبر: <https://kalixcode-lvx9ubmm.manus.space>.
+هذا المثبّت الخفيف لا ينزّل مساحة عمل Kalix التطويرية أو مئات حزم JavaScript إلى الهاتف. بدلًا من ذلك، يضيف أمر `kalix` رسميًا لفتح مساحة **Kalix Code Cloud** المحمية والمتجاوبة مع الهاتف على الرابط التالي: <https://kalixcode-lvx9ubmm.manus.space>.
 
-> يلزم Node.js بالإصدار `22.19.0` أو أحدث، كما يعرّفه `package.json` في جذر المستودع. لا تعتمد على حزمة npm منشورة؛ ثبّت من المصدر في هذه المرحلة التجريبية.
+> تحتاج إلى اتصال بالإنترنت لأن مساحة Kalix تعمل عبر HTTPS. تظل مفاتيح مزوّدي النماذج ورموز GitHub ضمن حسابك في مساحة العمل المحمية، ولا تُحفظ في Termux.
 
-## تثبيت أول مرة
+## تثبيت مرة واحدة
 
-استخدم المُثبّت الرسمي. ينزّل Kalix Code مع واجهته المبنية مسبقًا، ويثبت Node.js وpnpm تلقائيًا، ويتجاوز نصوص البناء native غير المتوافقة مع Android. لا يحتاج الهاتف إلى بناء الواجهة؛ انتظر حتى تظهر رسالة النجاح ثم انسخ الأمر التالي فقط:
-
-```sh
-mkdir -p "$HOME/.cache/kalix" && curl --fail --location --retry 8 --retry-delay 3 --retry-all-errors --connect-timeout 20 --max-time 120 https://raw.githubusercontent.com/kalix-c/Kalix-code/master/scripts/install-termux.sh -o "$HOME/.cache/kalix/install-termux.sh" && sh "$HOME/.cache/kalix/install-termux.sh"
-```
-
-بعد ظهور رسالة النجاح، شغّل Kalix بالأمر المختصر التالي:
-
-```sh
-kalix web --background
-```
-
-إذا لم يكتمل تنزيل المُثبّت نفسه بسبب شبكة ضعيفة، نزّل الملف أولًا ثم افحصه اختياريًا قبل تشغيله:
-
-```sh
-mkdir -p "$HOME/.cache/kalix"
-curl --fail --location --retry 8 --retry-delay 3 --retry-all-errors --connect-timeout 20 --max-time 120 https://raw.githubusercontent.com/kalix-c/Kalix-code/master/scripts/install-termux.sh -o "$HOME/.cache/kalix/install-termux.sh"
-sed -n '1,80p' "$HOME/.cache/kalix/install-termux.sh"
-sh "$HOME/.cache/kalix/install-termux.sh"
-```
-
-## تشغيل واجهة Kalix محليًا في الخلفية
-
-بعد نجاح المُثبّت، يمكن تشغيل الواجهة من أي مسار في Termux:
-
-```sh
-kalix web --background
-```
-
-افتح المتصفح على هاتفك ثم انتقل إلى:
-
-```text
-http://127.0.0.1:3080
-```
-
-لا يفتح وضع الخلفية متصفحًا تلقائيًا. ويكتب السجل في:
-
-```sh
-tail -n 100 ~/.kalix/logs/web.log
-```
-
-يمكن تغيير مسار البيانات والسجل قبل التشغيل بتحديد `KALIX_HOME`:
-
-```sh
-export KALIX_HOME="$HOME/.kalix"
-kalix web --background
-```
-
-## تحديث النسخة المحلية
-
-أوقف عملية Kalix المحلية أولًا بالعثور على PID للعملية ثم استدعاء `kill` لهذا الـ PID. بعد ذلك، أعد تشغيل المُثبّت نفسه؛ ينزّل الإصدار الحالي ويستبدل المصدر المحلي بطريقة نظيفة:
+انسخ هذا الأمر فقط. يحفظ الملف داخل مجلد Termux القابل للكتابة ويعيد المحاولة تلقائيًا عند ضعف الشبكة:
 
 ```sh
 mkdir -p "$HOME/.cache/kalix" && curl --fail --location --retry 8 --retry-delay 3 --retry-all-errors --connect-timeout 20 --max-time 120 https://raw.githubusercontent.com/kalix-c/Kalix-code/master/scripts/install-termux.sh -o "$HOME/.cache/kalix/install-termux.sh" && sh "$HOME/.cache/kalix/install-termux.sh"
 ```
 
-ثم شغّل `kalix web --background` من جديد.
+## الفتح
 
-لمعرفة العملية التي يجب إيقافها دون تخمين، راجع قائمة العمليات ثم اختر PID الخاص بـ Kalix:
+بعد ظهور رسالة النجاح شغّل:
 
 ```sh
-ps -ef | grep '[a]pps/cli/src/bin.ts'
-kill <PID>
+kalix web
 ```
 
-## حدود مهمة
+يفتح الأمر الموقع في متصفح الهاتف إذا كانت أداة `termux-open-url` متاحة؛ وإلا يطبع الرابط لتفتحه يدويًا. لعرض الرابط فقط استخدم:
 
-هذه الخدمة المحلية خاصة بهاتفك ولا تجعل واجهة Kalix متاحة للعامة. لا تضع مفاتيح API أو رموز GitHub داخل مستودع Kalix أو في سجل الأوامر. يستخدم Android `--ignore-scripts` لتجنب بناء إضافات native غير متوافقة؛ الطرفية التفاعلية ليست مدعومة في هذا الوضع، بينما تبقى واجهة الويب المحلية وخدمة Kalix الأساسية متاحة. استخدم واجهة Kalix السحابية لإدارة مزوّدي النماذج أو مستودعات GitHub بحسابات معزولة، ثم أدخل الرمز داخل مساحة العمل المحمية فقط.
+```sh
+kalix url
+```
+
+## التحديث
+
+أعد تنفيذ أمر التثبيت نفسه. سيستبدل المشغّل الخفيف فقط ولا يحمّل حزمًا كبيرة.
+
+## الوضع المحلي الكامل
+
+تشغيل خادم Kalix كاملًا من المصدر داخل Termux غير موصى به حاليًا: يعتمد على مئات الحزم وبعض إضافات Node الأصلية، وقد يتجاوز مساحة الهاتف أو مهلة الشبكة. يستخدم `kalix web` على Android مساحة Kalix السحابية بدلاً من إنشاء خادم محلي على `127.0.0.1`.
