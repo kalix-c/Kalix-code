@@ -12,18 +12,46 @@
 
 ```sh
 pkg update -y && pkg upgrade -y
-pkg install -y git nodejs-lts
+pkg install -y git nodejs-lts curl unzip
 
+command -v git node corepack
 node --version
-git clone https://github.com/kalix-c/Kalix-code.git
-cd Kalix-code
+git --version
+corepack --version
 
+git config --global http.version HTTP/1.1
+rm -rf "$HOME/Kalix-code"
+git clone --depth 1 --single-branch https://github.com/kalix-c/Kalix-code.git "$HOME/Kalix-code"
+cd "$HOME/Kalix-code"
 corepack enable
 corepack install
 pnpm install --frozen-lockfile --no-optional
 ```
 
 إذا كانت نسخة Node أقل من `22.19.0` بعد تثبيت `nodejs-lts`، حدّث حزم Termux أولًا ثم أعد فحص النسخة قبل المتابعة.
+
+## بديل تنزيل عند انقطاع Git
+
+إذا ظهر خطأ مثل `RPC failed` أو `early EOF` أثناء `git clone`، لا تتابع الأوامر التالية؛ فمجلد Kalix لم يُنزّل بعد. استخدم هذا البديل لتنزيل لقطة المصدر الحالية مع محاولات إعادة تلقائية، ثم أكمل من سطر `cd`:
+
+```sh
+rm -rf "$HOME/Kalix-code" "$HOME/Kalix-code-master" /tmp/kalix-code.zip
+curl -fL --retry 8 --retry-delay 3 --retry-all-errors --connect-timeout 20 --max-time 600 \
+  https://github.com/kalix-c/Kalix-code/archive/refs/heads/master.zip \
+  -o /tmp/kalix-code.zip
+unzip -q /tmp/kalix-code.zip -d "$HOME"
+mv "$HOME/Kalix-code-master" "$HOME/Kalix-code"
+cd "$HOME/Kalix-code"
+corepack enable
+corepack install
+pnpm install --frozen-lockfile --no-optional
+```
+
+تحقق من نجاح التنزيل قبل التثبيت عبر الأمر التالي؛ يجب أن يعرض `package.json`:
+
+```sh
+test -f "$HOME/Kalix-code/package.json" && echo "Kalix Code downloaded successfully"
+```
 
 ## تشغيل واجهة Kalix محليًا في الخلفية
 
