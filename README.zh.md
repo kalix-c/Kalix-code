@@ -31,20 +31,20 @@ pnpm kalix web
 
 ### Android：Termux
 
-从受信任的当前来源安装 Termux，然后在终端中运行同一个本地服务：
+从受信任的当前来源安装 Termux，然后在终端中运行轻量级本地服务。Android 路径会有意跳过服务 Web UI 不需要的可选原生交互式终端支持：
 
 ```sh
-pkg update && pkg upgrade
-pkg install git nodejs-lts
-corepack enable
-git clone https://github.com/kalix-c/Kalix-code.git
+pkg update -y && pkg upgrade -y
+pkg install -y git nodejs-lts
+git clone --depth 1 https://github.com/kalix-c/Kalix-code.git
 cd Kalix-code
-pnpm install
-pnpm run build
+corepack enable
+corepack install
+pnpm install --frozen-lockfile --no-optional
 pnpm kalix web --background
 ```
 
-`kalix web --background` 不会打开浏览器，会将日志写入 `$KALIX_HOME/logs/web.log`，并把服务与终端分离。需要时在设备浏览器中打开 `http://127.0.0.1:3080`；关闭标签页不会停止服务。参见 [Web UI 指南](docs/user/guide/index.zh.md)。
+`kalix web --background` 不会打开浏览器，会将日志写入 `$KALIX_HOME/logs/web.log`，并把服务与终端分离。需要时在设备浏览器中打开 `http://127.0.0.1:3080`；关闭标签页不会停止服务。轻量级 Android 模式不提供交互式 PTY 功能；如需这些功能，请使用电脑构建。参见 [Termux 指南](docs/termux.md) 和 [Web UI 指南](docs/user/guide/index.zh.md)。
 
 ## 社区与支持
 

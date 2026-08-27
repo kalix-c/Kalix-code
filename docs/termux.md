@@ -20,8 +20,7 @@ cd Kalix-code
 
 corepack enable
 corepack install
-pnpm install --frozen-lockfile
-pnpm run build
+pnpm install --frozen-lockfile --no-optional
 ```
 
 إذا كانت نسخة Node أقل من `22.19.0` بعد تثبيت `nodejs-lts`، حدّث حزم Termux أولًا ثم أعد فحص النسخة قبل المتابعة.
@@ -60,8 +59,7 @@ pnpm kalix web --background
 ```sh
 git pull --ff-only
 corepack install
-pnpm install --frozen-lockfile
-pnpm run build
+pnpm install --frozen-lockfile --no-optional
 pnpm kalix web --background
 ```
 
@@ -74,4 +72,4 @@ kill <PID>
 
 ## حدود مهمة
 
-هذه الخدمة المحلية خاصة بهاتفك ولا تجعل واجهة Kalix متاحة للعامة. لا تضع مفاتيح API أو رموز GitHub داخل مستودع Kalix أو في سجل الأوامر. استخدم واجهة Kalix السحابية لإدارة مزوّدي النماذج أو مستودعات GitHub بحسابات معزولة، ثم أدخل الرمز داخل مساحة العمل المحمية فقط.
+هذه الخدمة المحلية خاصة بهاتفك ولا تجعل واجهة Kalix متاحة للعامة. لا تضع مفاتيح API أو رموز GitHub داخل مستودع Kalix أو في سجل الأوامر. تستخدم أوامر Android `--no-optional` لتجاوز `node-pty`، ولذلك لا تتوفر الطرفية التفاعلية في Termux؛ واجهة الويب المحلية وخدمة Kalix الأساسية لا تحتاج إليها. استخدم واجهة Kalix السحابية لإدارة مزوّدي النماذج أو مستودعات GitHub بحسابات معزولة، ثم أدخل الرمز داخل مساحة العمل المحمية فقط.

@@ -12,8 +12,6 @@ import { constants } from 'node:fs'
 import { access, stat } from 'node:fs/promises'
 import { delimiter, extname, isAbsolute, resolve } from 'node:path'
 import { Context } from '@deepseek-ai/cordis'
-import * as nodePty from 'node-pty'
-import type { IPtyForkOptions } from 'node-pty'
 import { SubprocessRuntime } from '@deepseek-ai/dsh-subprocess'
 import type {
   SubprocessHandle,
@@ -26,6 +24,41 @@ import type { LocalSubprocessHandle, SpawnInternals } from './spawn.ts'
 import { createProcessInspector } from './process-inspector.ts'
 import type { ProcessInspector } from './process-inspector.ts'
 import { LocalTerminalHandle } from './terminal.ts'
+import type { LocalPty } from './terminal.ts'
+
+interface PtyForkOptions {
+  name: string
+  rows: number
+  cols: number
+  cwd?: string
+  env: NodeJS.ProcessEnv
+}
+
+interface PtyBackend {
+  spawn(file: string, args: string[], options: PtyForkOptions): LocalPty
+}
+
+type PtyBackendLoader = () => Promise<PtyBackend>
+const OPTIONAL_PTY_MODULE = 'node-pty'
+
+/**
+ * Load the optional interactive-terminal backend only when a caller asks for a PTY.
+ * This keeps non-terminal profiles usable on Android/Termux where node-pty has no
+ * compatible prebuild and must not prevent Kalix from starting.
+ */
+export async function loadPtyBackend(loader: PtyBackendLoader = async () => {
+  const imported: unknown = await import(OPTIONAL_PTY_MODULE)
+  return imported as PtyBackend
+}): Promise<PtyBackend> {
+  try {
+    return await loader()
+  } catch (cause) {
+    throw new Error(
+      'subprocess-local: interactive terminals are unavailable because the optional node-pty backend is not installed on this platform',
+      { cause },
+    )
+  }
+}
 
 /**
  * Local subprocess service: detached process trees, Node-shaped stdio
@@ -164,7 +197,7 @@ export class LocalSubprocessRuntime extends SubprocessRuntime {
       throw new Error('subprocess-local: terminal argv must contain a program')
     }
     spec.signal?.throwIfAborted()
-    const options: IPtyForkOptions = {
+    const options: PtyForkOptions = {
       name: 'dumb',
       rows: spec.rows,
       cols: spec.cols,
@@ -172,7 +205,7 @@ export class LocalSubprocessRuntime extends SubprocessRuntime {
       env: childEnv(spec.env),
     }
     const inspector = this.terminalInspector ?? createProcessInspector()
-    const terminal = nodePty.spawn(file, [...spec.argv.slice(1)], options)
+    const terminal = (await loadPtyBackend()).spawn(file, [...spec.argv.slice(1)], options)
     const handle = new LocalTerminalHandle(terminal, inspector, spec.graceMs)
     this.terminals.add(handle)
     const release = async (): Promise<void> => {

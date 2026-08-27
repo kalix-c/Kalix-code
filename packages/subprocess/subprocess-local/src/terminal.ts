@@ -3,7 +3,6 @@
 import { Buffer } from 'node:buffer'
 import { constants } from 'node:os'
 import { PassThrough } from 'node:stream'
-import type { IDisposable, IPty } from 'node-pty'
 import type {
   SubprocessOutcome,
   SubprocessTerminalForeground,
@@ -11,6 +10,15 @@ import type {
   SubprocessTerminalSignal,
 } from '@deepseek-ai/dsh-subprocess'
 import type { ProcessIdentity, ProcessInspector } from './process-inspector.ts'
+
+/** Minimal terminal shape supplied by node-pty without requiring the optional package at startup. */
+export interface LocalPty {
+  pid: number
+  onData(listener: (data: string) => void): { dispose(): void }
+  onExit(listener: (event: { exitCode: number; signal?: number }) => void): { dispose(): void }
+  write(data: string): void
+  kill(signal?: string): void
+}
 
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
@@ -38,8 +46,8 @@ export class LocalTerminalHandle implements SubprocessTerminalHandle {
   readonly done: Promise<SubprocessOutcome>
 
   private readonly outcome = Promise.withResolvers<SubprocessOutcome>()
-  private readonly dataDisposable: IDisposable
-  private readonly exitDisposable: IDisposable
+  private readonly dataDisposable: { dispose(): void }
+  private readonly exitDisposable: { dispose(): void }
   private cleanup: Promise<void> | undefined
   private exited = false
   private trackedDescendants: ProcessIdentity[] = []
@@ -53,7 +61,7 @@ export class LocalTerminalHandle implements SubprocessTerminalHandle {
    * @param platform - host platform; defaults to the running platform, injectable for deterministic tests.
    */
   constructor(
-    private readonly terminal: IPty,
+    private readonly terminal: LocalPty,
     private readonly inspector: ProcessInspector,
     private readonly graceMs: number,
     private readonly platform: NodeJS.Platform = process.platform,

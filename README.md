@@ -31,20 +31,20 @@ The command serves the local UI at `http://127.0.0.1:3080`. Add `--no-open` when
 
 ### Android: Termux
 
-Install Termux from a current trusted source, then run the same local service from its terminal:
+Install Termux from a current trusted source, then run the lightweight local service from its terminal. The Android path intentionally skips optional native interactive-terminal support, which is not required to serve the Web UI:
 
 ```sh
-pkg update && pkg upgrade
-pkg install git nodejs-lts
-corepack enable
-git clone https://github.com/kalix-c/Kalix-code.git
+pkg update -y && pkg upgrade -y
+pkg install -y git nodejs-lts
+git clone --depth 1 https://github.com/kalix-c/Kalix-code.git
 cd Kalix-code
-pnpm install
-pnpm run build
+corepack enable
+corepack install
+pnpm install --frozen-lockfile --no-optional
 pnpm kalix web --background
 ```
 
-`kalix web --background` starts the UI without opening a browser, writes logs to `$KALIX_HOME/logs/web.log`, and detaches the service from the terminal. Open `http://127.0.0.1:3080` in the device browser whenever needed; closing the tab does not stop the service. See the [Web UI guide](docs/user/guide/index.md).
+`kalix web --background` starts the UI without opening a browser, writes logs to `$KALIX_HOME/logs/web.log`, and detaches the service from the terminal. Open `http://127.0.0.1:3080` in the device browser whenever needed; closing the tab does not stop the service. Interactive PTY features are unavailable in this lightweight Android mode; use a computer build if they are required. See the [Termux guide](docs/termux.md) and the [Web UI guide](docs/user/guide/index.md).
 
 ## Community and support
 
