@@ -8,27 +8,25 @@
 
 ## تثبيت أول مرة
 
-افتح Termux ثم شغّل الأوامر التالية بالترتيب:
+استخدم المُثبّت الرسمي. ينزّل Kalix Code من الأرشيف مباشرةً، ويثبت Node.js وpnpm تلقائيًا، ويتجنب اعتماد `node-pty` غير المتوافق مع Android. انسخ الأمر التالي فقط:
 
 ```sh
-pkg update -y && pkg upgrade -y
-pkg install -y git nodejs-lts curl unzip
-
-command -v git node corepack
-node --version
-git --version
-corepack --version
-
-git config --global http.version HTTP/1.1
-rm -rf "$HOME/Kalix-code"
-git clone --depth 1 --single-branch https://github.com/kalix-c/Kalix-code.git "$HOME/Kalix-code"
-cd "$HOME/Kalix-code"
-corepack enable
-corepack install
-pnpm install --frozen-lockfile --no-optional
+curl -fsSL https://raw.githubusercontent.com/kalix-c/Kalix-code/master/scripts/install-termux.sh -o /tmp/kalix-install.sh && sh /tmp/kalix-install.sh
 ```
 
-إذا كانت نسخة Node أقل من `22.19.0` بعد تثبيت `nodejs-lts`، حدّث حزم Termux أولًا ثم أعد فحص النسخة قبل المتابعة.
+بعد ظهور رسالة النجاح، شغّل Kalix بالأمر المختصر التالي:
+
+```sh
+kalix web --background
+```
+
+إذا لم يكتمل تنزيل المُثبّت نفسه بسبب شبكة ضعيفة، نزّل الملف أولًا ثم افحصه اختياريًا قبل تشغيله:
+
+```sh
+curl -fL --retry 8 --retry-delay 3 --retry-all-errors https://raw.githubusercontent.com/kalix-c/Kalix-code/master/scripts/install-termux.sh -o /tmp/kalix-install.sh
+sed -n '1,80p' /tmp/kalix-install.sh
+sh /tmp/kalix-install.sh
+```
 
 ## بديل تنزيل عند انقطاع Git
 
