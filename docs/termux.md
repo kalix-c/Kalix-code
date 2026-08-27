@@ -11,7 +11,7 @@
 استخدم المُثبّت الرسمي. ينزّل Kalix Code مع واجهته المبنية مسبقًا، ويثبت Node.js وpnpm تلقائيًا، ويتجاوز نصوص البناء native غير المتوافقة مع Android. لا يحتاج الهاتف إلى بناء الواجهة؛ انتظر حتى تظهر رسالة النجاح ثم انسخ الأمر التالي فقط:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/kalix-c/Kalix-code/master/scripts/install-termux.sh -o /tmp/kalix-install.sh && sh /tmp/kalix-install.sh
+mkdir -p "$HOME/.cache/kalix" && curl --fail --location --retry 8 --retry-delay 3 --retry-all-errors --connect-timeout 20 --max-time 120 https://raw.githubusercontent.com/kalix-c/Kalix-code/master/scripts/install-termux.sh -o "$HOME/.cache/kalix/install-termux.sh" && sh "$HOME/.cache/kalix/install-termux.sh"
 ```
 
 بعد ظهور رسالة النجاح، شغّل Kalix بالأمر المختصر التالي:
@@ -23,9 +23,10 @@ kalix web --background
 إذا لم يكتمل تنزيل المُثبّت نفسه بسبب شبكة ضعيفة، نزّل الملف أولًا ثم افحصه اختياريًا قبل تشغيله:
 
 ```sh
-curl -fL --retry 8 --retry-delay 3 --retry-all-errors https://raw.githubusercontent.com/kalix-c/Kalix-code/master/scripts/install-termux.sh -o /tmp/kalix-install.sh
-sed -n '1,80p' /tmp/kalix-install.sh
-sh /tmp/kalix-install.sh
+mkdir -p "$HOME/.cache/kalix"
+curl --fail --location --retry 8 --retry-delay 3 --retry-all-errors --connect-timeout 20 --max-time 120 https://raw.githubusercontent.com/kalix-c/Kalix-code/master/scripts/install-termux.sh -o "$HOME/.cache/kalix/install-termux.sh"
+sed -n '1,80p' "$HOME/.cache/kalix/install-termux.sh"
+sh "$HOME/.cache/kalix/install-termux.sh"
 ```
 
 ## تشغيل واجهة Kalix محليًا في الخلفية
@@ -33,7 +34,7 @@ sh /tmp/kalix-install.sh
 بعد نجاح المُثبّت، يمكن تشغيل الواجهة من أي مسار في Termux:
 
 ```sh
-pnpm kalix web --background
+kalix web --background
 ```
 
 افتح المتصفح على هاتفك ثم انتقل إلى:
@@ -52,7 +53,7 @@ tail -n 100 ~/.kalix/logs/web.log
 
 ```sh
 export KALIX_HOME="$HOME/.kalix"
-pnpm kalix web --background
+kalix web --background
 ```
 
 ## تحديث النسخة المحلية
@@ -60,7 +61,7 @@ pnpm kalix web --background
 أوقف عملية Kalix المحلية أولًا بالعثور على PID للعملية ثم استدعاء `kill` لهذا الـ PID. بعد ذلك، أعد تشغيل المُثبّت نفسه؛ ينزّل الإصدار الحالي ويستبدل المصدر المحلي بطريقة نظيفة:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/kalix-c/Kalix-code/master/scripts/install-termux.sh -o /tmp/kalix-install.sh && sh /tmp/kalix-install.sh
+mkdir -p "$HOME/.cache/kalix" && curl --fail --location --retry 8 --retry-delay 3 --retry-all-errors --connect-timeout 20 --max-time 120 https://raw.githubusercontent.com/kalix-c/Kalix-code/master/scripts/install-termux.sh -o "$HOME/.cache/kalix/install-termux.sh" && sh "$HOME/.cache/kalix/install-termux.sh"
 ```
 
 ثم شغّل `kalix web --background` من جديد.
