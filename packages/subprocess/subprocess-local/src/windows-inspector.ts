@@ -10,9 +10,34 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import koffi from 'koffi'
+import { createRequire } from 'node:module'
 import type { SubprocessTerminalSignal } from '@deepseek-ai/dsh-subprocess'
 import type { ProcessIdentity, ProcessInspector } from './process-inspector.ts'
+
+interface KoffiStruct { size: number }
+interface KoffiModule {
+  pointer(type: unknown): unknown
+  array(type: string, count: number): unknown
+  struct(name: string, fields: Record<string, unknown>): KoffiStruct
+  load(library: string): { func: (...args: unknown[]) => unknown }
+  alloc(type: unknown, count: number): unknown
+  encode(pointer: unknown, type: string, value: number): void
+  decode(pointer: unknown, type: unknown): unknown
+}
+
+const require = createRequire(import.meta.url)
+let loadedKoffi: KoffiModule | undefined
+
+/** Load the optional Koffi binding only for Windows-native process inspection. */
+function getKoffi(): KoffiModule {
+  if (loadedKoffi !== undefined) return loadedKoffi
+  try {
+    loadedKoffi = require('koffi') as KoffiModule
+    return loadedKoffi
+  } catch (cause) {
+    throw new Error('subprocess-local: Windows terminal inspection requires the optional koffi backend', { cause })
+  }
+}
 
 /** One Toolhelp32 process-table row. */
 export interface ProcessEntry {
@@ -171,7 +196,9 @@ interface Win32Bindings {
   closeHandle(handle: NativePtr): number
 }
 
-const PVOID: ReturnType<typeof koffi.pointer> = koffi.pointer('void')
+function pvoid(): unknown {
+  return getKoffi().pointer('void')
+}
 
 /**
  * Resolve the koffi Win32 struct types once. Registration is lazy and cached
@@ -179,14 +206,15 @@ const PVOID: ReturnType<typeof koffi.pointer> = koffi.pointer('void')
  * re-evaluate this module (a hoisted `vi.mock` re-imports the graph) must not
  * re-register the names.
  */
-function win32Structs(): { PROCESSENTRY32W: ReturnType<typeof koffi.struct>; FILETIME: ReturnType<typeof koffi.struct> } {
+function win32Structs(): { PROCESSENTRY32W: KoffiStruct; FILETIME: KoffiStruct } {
   if (cachedStructs !== undefined) return cachedStructs
+  const koffi = getKoffi()
   // koffi PROCESSENTRY32W layout (tlhelp32.h); the size assert pins the x64 layout.
   const PROCESSENTRY32W = koffi.struct('PROCESSENTRY32W', {
     dwSize: 'uint32',
     cntUsage: 'uint32',
     th32ProcessID: 'uint32',
-    th32DefaultHeapID: PVOID,
+    th32DefaultHeapID: pvoid(),
     th32ModuleID: 'uint32',
     cCntThreads: 'uint32',
     th32ParentProcessID: 'uint32',
@@ -224,6 +252,8 @@ let cachedBindings: Win32Bindings | undefined
  */
 function win32Bindings(): Win32Bindings {
   if (cachedBindings !== undefined) return cachedBindings
+  const koffi = getKoffi()
+  const PVOID = pvoid()
   const { PROCESSENTRY32W, FILETIME } = win32Structs()
   const kernel32 = koffi.load('kernel32.dll')
   const bind = (
@@ -256,14 +286,15 @@ function win32Bindings(): Win32Bindings {
  * @param count - element count.
  * @returns the branded allocation pointer.
  */
-function allocNative(type: Parameters<typeof koffi.alloc>[0], count: number): NativePtr {
-  const value: unknown = koffi.alloc(type, count)
+function allocNative(type: unknown, count: number): NativePtr {
+  const value: unknown = getKoffi().alloc(type, count)
   return value as NativePtr
 }
 
 /** Enumerate the current process table through Toolhelp32. */
 function snapshotWindowsProcesses(bindings: Win32Bindings): ProcessEntry[] {
   const { PROCESSENTRY32W } = win32Structs()
+  const koffi = getKoffi()
   const snapshot = bindings.createToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
   /* v8 ignore next -- an invalid snapshot for the process flag is not producible through the public API;
      the guard mirrors POSIX's unreadable-proc tolerance and isInvalidHandle is unit-tested. */
@@ -290,6 +321,7 @@ function snapshotWindowsProcesses(bindings: Win32Bindings): ProcessEntry[] {
 /** Read one process's creation identity and current wait state. */
 function windowsProcessState(bindings: Win32Bindings, pid: number): WindowsProcessState | undefined {
   const { FILETIME } = win32Structs()
+  const koffi = getKoffi()
   const handle = bindings.openProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, 0, pid)
   if (isInvalidHandle(handle)) return undefined
   try {

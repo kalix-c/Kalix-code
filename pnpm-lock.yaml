@@ -110,7 +110,7 @@ importers:
         version: 5.0.0
       tsdown:
         specifier: ^0.22.2
-        version: 0.22.2(oxc-resolver@11.20.0)(publint@0.3.21)(tsx@4.22.4)(typescript@6.0.3)
+        version: 0.22.2(oxc-resolver@11.20.0)(publint@0.3.21)(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1)
       tsx:
         specifier: ^4.22.4
         version: 4.22.4
@@ -7862,10 +7862,6 @@ importers:
         version: link:../../runtime-diagnostics/invariants
 
   packages/subprocess/subprocess-local:
-    dependencies:
-      koffi:
-        specifier: ^3.1.0
-        version: 3.1.1
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:^
@@ -7883,6 +7879,9 @@ importers:
         specifier: workspace:^
         version: link:../../util/timeout
     optionalDependencies:
+      koffi:
+        specifier: ^3.1.0
+        version: 3.1.1
       node-pty:
         specifier: 1.2.0-beta.15
         version: 1.2.0-beta.15(patch_hash=b40ae545608897914bd25fb009c97eeac478c34e8a910298ddcb01b746534bb0)
@@ -14353,6 +14352,16 @@ packages:
     resolution: {integrity: sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==}
     engines: {node: '>= 0.8'}
 
+  unrun@0.3.1:
+    resolution: {integrity: sha512-onIck/oNnCaytwths1ZVp1LK2Gq2hPoyFhiHebObuUXqR3S0uHuLLaBK8K6mRRgV7Ptip8AnNvaUsgzwWwBZuA==}
+    engines: {node: ^22.13.0 || >=24.0.0}
+    hasBin: true
+    peerDependencies:
+      synckit: ^0.11.11
+    peerDependenciesMeta:
+      synckit:
+        optional: true
+
   update-browserslist-db@1.2.3:
     resolution: {integrity: sha512-Js0m9cx+qOgDxo0eMiFGEueWztz+d4+M3rGlmKPT+T4IS/jP4ylw3Nwpu6cpTTP8R1MAC1kF4VbdLt3ARf209w==}
     hasBin: true
@@ -19823,7 +19832,7 @@ snapshots:
     optionalDependencies:
       typescript: 6.0.3
 
-  tsdown@0.22.2(oxc-resolver@11.20.0)(publint@0.3.21)(tsx@4.22.4)(typescript@6.0.3):
+  tsdown@0.22.2(oxc-resolver@11.20.0)(publint@0.3.21)(tsx@4.22.4)(typescript@6.0.3)(unrun@0.3.1):
     dependencies:
       ansis: 4.3.1
       cac: 7.0.0
@@ -19844,6 +19853,7 @@ snapshots:
       publint: 0.3.21
       tsx: 4.22.4
       typescript: 6.0.3
+      unrun: 0.3.1
     transitivePeerDependencies:
       - '@ts-macro/tsc'
       - '@typescript/native-preview'
@@ -19927,6 +19937,11 @@ snapshots:
       unist-util-visit-parents: 6.0.2
 
   unpipe@1.0.0: {}
+
+  unrun@0.3.1:
+    dependencies:
+      rolldown: 1.1.1
+    optional: true
 
   update-browserslist-db@1.2.3(browserslist@4.28.6):
     dependencies:

@@ -3,7 +3,7 @@
 # of Git and skips optional native PTY dependencies unavailable on Android.
 set -eu
 
-REPOSITORY_ARCHIVE='https://github.com/kalix-c/Kalix-code/archive/refs/heads/master.zip'
+REPOSITORY_ARCHIVE="${KALIX_ARCHIVE_URL:-https://github.com/kalix-c/Kalix-code/archive/refs/heads/master.zip}"
 INSTALL_DIR="${KALIX_HOME:-$HOME/.kalix}/source"
 CACHE_DIR="${TMPDIR:-/tmp}/kalix-code-install"
 ARCHIVE="$CACHE_DIR/kalix-code.zip"
@@ -65,12 +65,13 @@ if ! command -v pnpm >/dev/null 2>&1; then
   npm install --global pnpm@11.7.0
 fi
 
-pnpm install --frozen-lockfile --no-optional
+pnpm install --frozen-lockfile --ignore-scripts
 
 if [ -n "${PREFIX:-}" ] && [ -d "$PREFIX/bin" ]; then
   cat > "$PREFIX/bin/kalix" <<EOF
 #!/data/data/com.termux/files/usr/bin/sh
-exec pnpm --dir "$INSTALL_DIR" kalix "\$@"
+cd "$INSTALL_DIR"
+exec pnpm kalix "\$@"
 EOF
   chmod 755 "$PREFIX/bin/kalix"
 fi

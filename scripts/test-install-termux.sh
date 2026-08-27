@@ -48,7 +48,7 @@ PATH="$work/bin:$PATH" \
   sh "$root/scripts/install-termux.sh"
 
 test -f "$work/kalix-home/source/package.json"
-grep -q -- '--no-optional' "$work/pnpm-install.txt"
+grep -q -- '--ignore-scripts' "$work/pnpm-install.txt"
 test -x "$work/prefix/bin/kalix"
 KALIX_TEST_PNPM_ARGS="$work/pnpm-launch.txt" PATH="$work/bin:$PATH" sh "$work/prefix/bin/kalix" web --background
 grep -q -- 'kalix web --background' "$work/pnpm-launch.txt"

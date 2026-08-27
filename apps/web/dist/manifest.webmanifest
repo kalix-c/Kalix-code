@@ -1,0 +1,16 @@
+{
+  "id": "/",
+  "name": "Kalix Code",
+  "short_name": "Kalix",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "icons": [
+    {
+      "src": "/kalix-code-mascot.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
